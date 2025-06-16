@@ -1,0 +1,193 @@
+# Vagga script to build Gegl filter using meson
+
+# A container to build Gegl filters using meson
+# and install them in a GIMP environment.
+# Filters are C programs that use gegl and gimp libraries.
+# Filter are installed in the user's home directory
+# and can be used in GIMP.
+
+# This script builds a container environment
+# that has the gegl and gimp libraries installed.
+
+# The "run" command builds the gegl filter
+# and installs it in the user's home directory.
+# and runs gimp.
+
+# You must have Vagga installed.
+# https://vagga.readthedocs.io/en/latest/
+
+# Then, you can cd to the parent directory, 
+# and run the following commands:
+# vagga run
+
+containers:
+
+  # basic OS with dev (compiling)
+  baseOS:
+    setup:
+     - !UbuntuRelease { codename: plucky, url: https://cloud-images.ubuntu.com/plucky/current/plucky-server-cloudimg-amd64-root.tar.xz}
+
+
+
+
+  # with required build tools
+  baseWithTools:
+    setup:
+    - !Container baseOS
+
+    # Enable universe repo, where many packages live
+    - !UbuntuUniverse
+
+    # tools for dev (C compiler)
+    - !Install [build-essential]
+
+    # Install packaged version, which might be too old.
+    - !Install [meson]
+
+    - !Install [valgrind]
+
+
+
+  # with libraries required by gegl
+  # these are package names, might depend on distribution
+  # e.g. package names are different in alpine
+
+  geglDeps:
+    setup:
+    - !Container baseWithTools
+
+    # babl, gegl, GIMP uses glib group of libraries
+    # package comprises glib, gobject, and gio
+    - !Install [glib2.0-dev]
+
+    # Not building gegl or gimp, so don't need this 
+    #- !Install [libgirepository1.0-dev]
+
+    # gegl filter requires libgegl-0.4-dev
+    - !Install [libgegl-dev]
+
+    # gegl is a library, but also has a command line tool
+    - !Install [gegl]
+
+    # testing gegl filter easier with gimp
+    - !Install [gimp]
+
+
+
+    # remove DNS file that vagga will recreate
+    # !!! You must do this last, and not at the beginning of a container build
+    - !Sh "rm /etc/resolv.conf"
+
+    # Larger /tmp for testing
+    # 100Mi is default, not enough to create many image files
+    volumes:
+      /tmp: !Tmpfs { size: 500Mi, mode: 0o1777 }
+
+
+      # bind external volume named runuser pointing to external /run/user/1000 to /run in container
+
+      # wayland
+      # create new filesystem name run in the container
+      # put the wayland display socket in it
+      /run: !BindRW /volumes/runuser
+
+    environ:
+      HOME: /work/.home
+
+
+
+
+
+
+commands:
+
+
+  run: !Command
+    description: Build, install, run GEGL filter
+    container:  geglDeps
+    write-mode: transient-hard-link-copy
+    run: |
+
+      # Peculiar to using a container, not to gimp
+      export HOME=/work/.home
+
+      # Peculiar to GIMP use of GIR
+      export GI_TYPELIB_PATH=/usr/local/lib/x86_64-linux-gnu/girepository-1.0:/usr/local/lib/girepository-1.0
+
+      export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu:/usr/local/lib
+
+      # suppress dbind errors for accessability
+      export NO_AT_BRIDGE=1
+
+      # so can open DISPLAY: map to a dir mounted in the container
+      export XDG_RUNTIME_DIR=/run
+
+      rm -rf /work/.home/.local/share/gegl-0.4/plug-ins
+
+      # BUILD MY GEGL FILTER
+      cd /work/myGeglFilters
+
+      # setup the build directory
+      meson setup --reconfigure /work/myGeglFiltersBuild
+
+      echo "meson compile and install Gegl"
+      cd /work/myGeglFiltersBuild
+      meson compile -j 12
+      meson install
+
+      # cd out of the build environment
+      cd /work
+
+      
+      export G_MESSAGES_DEBUG=all
+
+      echo " "
+      echo "ls likely install locations"
+      ls -l /work/.home/.local/share/gegl-0.4/plug-ins/
+      #ls -l /usr/local/lib/x86_64-linux-gnu
+      echo " "
+
+
+      echo "echoing likely XDG environment variables"
+      echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+      echo "XDG_CONFIG_DIRS: $XDG_CONFIG_DIRS"
+      #echo "$XDG_CACHE_HOME"
+      #echo "$XDG_CONFIG_HOME"
+      echo "XDG_DATA_HOME: $XDG_DATA_HOME"
+      #echo "$XDG_DATA_DIRS"
+      echo " "
+
+      #export XDG_DATA_HOME=/usr/local/lib/x86_64-linux-gnu
+      export XDG_DATA_HOME=/work/.home/.local/share
+
+
+      echo "The environment in which gimp is run:"
+      env
+      echo " "
+
+      echo "Tell gegl to list my operations:"
+      # which gegl should yield /usr/bin/gegl
+      # gegl --list-all 
+      gegl --list-all | grep 'bootch'
+      echo " "
+
+      echo "Tell gegl to describe my installed filter:"
+      #gegl --info gegl:text
+      #gegl --info bootch:my-graph-filter
+      gegl --info bootch:my-point-filter
+      echo " "
+      gegl --info bootch:canny
+      echo " "
+
+      
+
+      echo "running gimp"
+      # run gimp with the filter installed.
+      # Tools>GEGL Operation should show the filter
+      #gimp
+
+      
+
+
+
+
