@@ -1,4 +1,4 @@
-project('my-graph-filter', 'c', version : '0.1')
+project('my-gegl-filters', 'c', version : '0.1')
 
 geglDependency = dependency('gegl-0.4', required : true)
 
@@ -11,16 +11,6 @@ userInstallPath = '/work/.home/.local/share/gegl-0.4/plug-ins/'
 # But we don't want to install where most libraries are.
 # We want to install to $XDG_DATA_HOME, where gegl looks.
 
-# Example from tutorial at gimp dev site
-subdir('metaOp')
+subdir('examples')
 
-# My examples
-subdir('graphOp')
-subdir('pointOp')
-subdir('areaOp')
-
-# Ops used by canny
-subdir('nonMaxSuppressionOp')
-
-# Canny edge detector
-subdir('cannyOp')
+subdir('canny')

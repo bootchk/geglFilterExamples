@@ -184,7 +184,7 @@ commands:
       echo "running gimp"
       # run gimp with the filter installed.
       # Tools>GEGL Operation should show the filter
-      #gimp
+      gimp
 
       
 
