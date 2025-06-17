@@ -1,3 +1,10 @@
+/*
+A brushfire operation.
+Historically called hysteresis, but this is a misnomer.
+Brushfire is a more accurate name.
+
+Derived from non-maximum-suppression-op.c
+*/
 
 
 #ifdef GEGL_PROPERTIES
@@ -10,13 +17,13 @@
 // Declare is a op of type GEGL_OP_AREA_FILTER
 // An area operation processes each pixel from surrounding pixels
 #define GEGL_OP_AREA_FILTER
-#define GEGL_OP_NAME     non_max_suppression
-#define GEGL_OP_C_SOURCE non-max-suppression-op.c
+#define GEGL_OP_NAME     hysteresis
+#define GEGL_OP_C_SOURCE hysteresis-op.c
 
 // Base on the above definitions, gegl-op.h generates code for the operation
 #include "gegl-op.h"
 
-#include "non-max-suppression.h"
+#include "hysteresis.h"
 
 
 
@@ -56,12 +63,8 @@ process (GeglOperation       *operation,
 
   GeglRectangle compute = gegl_operation_get_required_for_output (operation, "input", result);
   */
-
-  //has_alpha = babl_format_has_alpha (gegl_operation_get_format (operation, "output"));
   
-  g_debug ("%s in format %s", G_STRFUNC, babl_format_get_encoding (gegl_buffer_get_format (input)));
-  
-  non_maximum_suppression (
+  hysteresis (
     input,
     /* Using same rect for input and output. */
     rect, 
@@ -100,7 +103,7 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
     "title",       "Non-Maximum Suppression",
-    "name",        "bootch:non-max-suppression",
+    "name",        "bootch:hysteresis",
     "blurb",       "Thin edges in gradient field.",
     "version",     "0.1",
     "categories",  "Artistic",

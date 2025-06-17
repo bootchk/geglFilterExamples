@@ -3,18 +3,18 @@
 // Declare properties for this operation.
 // This is used by the GEGL properties system to generate a user interface
 
-property_double (blur_amount, "Blur amount", 3.0)
+property_double (blur_amount, "Blur amount", 1.0)
   description   ("Blur amount in pixels")
   value_range   (0.0, 10.0)
   ui_meta       ("unit", "pixel-distance")
 
-property_double (low, "Low", 0.3)
+property_double (low, "Low threshold", 0.3)
   description   ("Low threshold")
   value_range   (0.0, 0.5)
   ui_meta       ("unit", "pixel-distance")
 
 
-property_double (high, "High", 0.8)
+property_double (high, "High threshold", 0.8)
   description   ("High threshold")
   value_range   (0.5, 1.0)
   ui_meta       ("unit", "pixel-distance")
@@ -32,7 +32,7 @@ property_double (high, "High", 0.8)
 
 // Base on the above definitions, gegl-op.h generates code for the operation
 #include "gegl-op.h"
-
+// #include "gegl-image-gradient.h"
 
 
 /* Return a Gegl node that converts an image to grayscale.
@@ -94,14 +94,31 @@ make_blur_node (
 GeglNode *
 make_edge_detect_node (GeglNode *gegl)
 {
-  // return gegl_node_new_child (gegl, "operation", "gegl:edge-sobel", NULL);
-  return gegl_node_new_child (gegl, "operation", "gegl:image-gradient", NULL);
+  #define EDGE_SOEBEL 1 // Use the Sobel operator for edge detection.
+  #ifdef EDGE_SOEBEL
+
+  return gegl_node_new_child (gegl, "operation", "gegl:edge-sobel", NULL);
+
+  #else
+
+  /* 
+  Note that image-gradient internally converts to format RGB, dropping alpha.
+  See the source code for gegl:image-gradient.
+  The output is a 2-channel image.
+  */
+  return gegl_node_new_child (
+    gegl, 
+    "operation",   "gegl:image-gradient",
+    "output-mode", 2, // FAIL: "both", GEGL_IMAGEGRADIENT_BOTH, // both magnitude and direction
+    NULL);
+
+  #endif
 }
 
+/* Return a Gegl node that thins edges. */
 GeglNode *
 make_edge_thinning_node (GeglNode *gegl)
 {
-  /* Return a Gegl node that thins edges. */
   return gegl_node_new_child (gegl, "operation", "bootch:non-max-suppression", NULL);
 }
 
@@ -128,6 +145,15 @@ make_threshold_node (GeglNode *gegl)
                               NULL);
 }
 
+GeglNode *
+make_hysteresis_node (GeglNode *gegl)
+{
+  return gegl_node_new_child (gegl, 
+                              "operation", "bootch:hysteresis",
+                              // magnitude below this value is set to 0 i.e. black.
+                              // "low-threshold",  0.33,
+                              NULL);
+}
 
 /* gegl:convert-format */
 
@@ -144,6 +170,7 @@ attach (GeglOperation *operation)
 {
   GeglNode *gegl = operation->node;
 
+  // Nodes with params redirected to self's params.
   GeglNode *threshold_node = make_threshold_node (gegl);
   GeglNode *blur_node      = make_blur_node (gegl, 3.0);
 
@@ -160,16 +187,30 @@ attach (GeglOperation *operation)
     
     /* Canny is this sequence of operations. */
     
-    // convert to grayscale
+    // convert to grayscale (to reduce computation, the final result is grayscale)
     make_grayscale_node (gegl),
-    // blur 
+    // format is now Y' or Y'A float, i.e. channels gray w alpha.
+
+    // blur, to reduce noise
     blur_node,
-    // sobel edge detection
+
+    // sobel edge detection. Result edges are thick.
     make_edge_detect_node (gegl),
-    // non maximum suppression
+    // format is now YA float, i.e. channels magnitude and direction.
+    // Note we have lost any alpha channel, it is not needed for edges.
+
+    // Thin edges, aka non maximum suppression.
     make_edge_thinning_node (gegl),
-    // hysteresis thresholding
+
+    // TODO discard direction channel,
+
+    // double thresholding
     threshold_node,
+
+    // hysteresis edge tracking
+    make_hysteresis_node (gegl),
+
+    // We could convert to indexed color, black and white,
 
     gegl_node_get_output_proxy (gegl, "output"),
     NULL);
@@ -178,6 +219,7 @@ attach (GeglOperation *operation)
    * to the interior node's properties.
    */
 
+  // Same outer param passed for x and y std-dev.
   gegl_operation_meta_redirect (operation, "blur-amount", blur_node, "std-dev-x");
   gegl_operation_meta_redirect (operation, "blur-amount", blur_node, "std-dev-y");
   

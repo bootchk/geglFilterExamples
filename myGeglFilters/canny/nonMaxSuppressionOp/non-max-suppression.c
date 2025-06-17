@@ -29,11 +29,28 @@ typedef enum
 } DirectionAxis;
 
 
+/*
+Gradient is two channels, second is an angle in radians [-pi, pi].
+*/
 static DirectionAxis
-clamped_gradient_axis (gfloat *gradient)
+clamped_axis_of_vector (gfloat *vector)
 {
-  gfloat angle = gradient[1]; // Assuming the second channel is the angle.
-  
+  gfloat angle = vector[1];
+
+  if (angle != 1.0)
+    g_debug ("%s: angle in radians = %f", G_STRFUNC, angle);
+
+  // Normalize angle to [0, 2 pi) degrees.
+  if (angle < 0)
+    angle += 2 * G_PI; // Convert negative angle to positive.
+  else if (angle >= 2 * G_PI)
+    angle -= 2 * G_PI; // Convert angle greater than 2 pi  to [0, 2 pi).
+
+  // Convert radians to degrees.
+  angle = angle * 180.0 / G_PI;
+
+  //g_debug ("%s: angle in degrees = %f", G_STRFUNC, angle);
+
   if (angle < 22.5 || angle >= 337.5)
     return AXIS_NS; // North-South
   else if (angle >= 22.5 && angle < 67.5)
@@ -49,6 +66,7 @@ clamped_gradient_axis (gfloat *gradient)
   else if (angle >= 247.5 && angle < 292.5)
     return AXIS_EW; // East-West
   else
+    // angle >= 292.5 && angle < 337.5
     return AXIS_SW_NE; // South-West to North-East
 }
 
@@ -59,7 +77,8 @@ in the clamped direction of the gradient.
 Local with respect to two neighbor pixel gradient magnitudes.
 
 All arguments are pointers to pixels
-having two channels: magnitude and direction.
+having two channels: magnitude and direction,
+representing a vector at that pixel.
 */
 static gboolean
 is_gradient_magnitude_a_local_maximum(
@@ -72,22 +91,23 @@ is_gradient_magnitude_a_local_maximum(
 
   // g_debug ("%s", G_STRFUNC);
 
-  switch ( clamped_gradient_axis (center) )
+  switch ( clamped_axis_of_vector (center) )
   {
+    // Is center magnitude greater than its...
     case AXIS_NS:
-      // Is center is greater than its vertical neighbors?
+      // vertical neighbors?
       result = (center[0] > top[0] && center[0] > bottom[0]);
       break;
     case AXIS_NW_SE:
-      // Is center is greater than its first diagonal neighbors?
+      // first diagonal neighbors?
       result = (center[0] > top_left[0] && center[0] > bottom_right[0]);
       break;
     case AXIS_EW:
-      // Is center is greater than its horizontal neighbors?
+      // horizontal neighbors?
       result = (center[0] > left[0] && center[0] > right[0]);
       break;
     case AXIS_SW_NE:
-      // Is center is greater than its second diagonal neighbors?
+      // second diagonal neighbors?
       result = (center[0] > bottom_left[0] && center[0] > top_right[0]);
       break;
     default:
@@ -246,7 +266,6 @@ non_maximum_suppression
           // Keep direction component, unchanged.
           dst_buf[dest_index + 1] = center[1];
 
-          // OLD dest_index++;
           // Increment the destination index.
           dest_index += FPP;
 
