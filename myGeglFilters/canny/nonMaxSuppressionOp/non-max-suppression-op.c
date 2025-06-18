@@ -59,16 +59,21 @@ process (GeglOperation       *operation,
 
   //has_alpha = babl_format_has_alpha (gegl_operation_get_format (operation, "output"));
   
-  g_debug ("%s in format %s", G_STRFUNC, babl_format_get_encoding (gegl_buffer_get_format (input)));
-  
+  g_debug ("%s in buffer format %s", G_STRFUNC, babl_format_get_encoding (gegl_buffer_get_format (input)));
+  g_debug ("%s in op format %s", G_STRFUNC, babl_format_get_encoding (gegl_operation_get_format (operation, "input")));
+  g_debug ("%s out op format %s", G_STRFUNC, babl_format_get_encoding (gegl_operation_get_format (operation, "output")));
+
   non_maximum_suppression (
     input,
     /* Using same rect for input and output. */
     rect, 
     output, 
     rect,
-    /* Using same format */
-    gegl_operation_get_format (operation, "output"));
+    /* 
+    Using format of input buffer, which is 2 float.
+    Using format of operation (Y'A) does not work, it gives 1.0 for direction.
+    */
+    gegl_buffer_get_format (input));
 
   return TRUE;
 }

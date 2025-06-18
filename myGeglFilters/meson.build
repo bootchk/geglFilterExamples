@@ -14,3 +14,5 @@ userInstallPath = '/work/.home/.local/share/gegl-0.4/plug-ins/'
 subdir('examples')
 
 subdir('canny')
+
+subdir('hacked')

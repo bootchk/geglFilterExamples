@@ -6,7 +6,7 @@
 
 
 
-#define FPP 2 // Floats per pixel for the input format (Y'A float has 2 channels)
+#define FPP 2 // Floats per pixel for the input format (has 2 channels)
 
 
 /*
@@ -30,15 +30,22 @@ typedef enum
 
 
 /*
-Gradient is two channels, second is an angle in radians [-pi, pi].
+Gradient is two channels, second is an angle in radians [-pi, pi],
+using the East-Counterclockwise Convention
+(0 degrees is East, 90 degrees is North, 180 degrees is West, -90 degrees is South)
+i.e. computed by atan2 (dy, dx).
+
+The implementation is not efficient, but it is simple and clear.
+That is, we don't need to convert convention, normalize, or work in degrees,
+except for intuitive understanding of the result.
 */
 static DirectionAxis
 clamped_axis_of_vector (gfloat *vector)
 {
   gfloat angle = vector[1];
 
-  if (angle != 1.0)
-    g_debug ("%s: angle in radians = %f", G_STRFUNC, angle);
+  //if (angle != 1.0)
+  //  g_debug ("%s: angle in radians = %f", G_STRFUNC, angle);
 
   // Normalize angle to [0, 2 pi) degrees.
   if (angle < 0)
@@ -51,23 +58,24 @@ clamped_axis_of_vector (gfloat *vector)
 
   //g_debug ("%s: angle in degrees = %f", G_STRFUNC, angle);
 
+  // Remember that the angle is in East-Counterclockwise Convention.
   if (angle < 22.5 || angle >= 337.5)
-    return AXIS_NS; // North-South
+    return AXIS_EW;
   else if (angle >= 22.5 && angle < 67.5)
-    return AXIS_NW_SE; // North-West to South-East
+    return AXIS_NW_SE;
   else if (angle >= 67.5 && angle < 112.5)
-    return AXIS_EW; // East-West
+    return AXIS_NS;
   else if (angle >= 112.5 && angle < 157.5)
-    return AXIS_SW_NE; // South-West to North-East
+    return AXIS_SW_NE;
   else if (angle >= 157.5 && angle < 202.5)
-    return AXIS_NS; // North-South
+    return AXIS_EW;
   else if (angle >= 202.5 && angle < 247.5)
-    return AXIS_NW_SE; // North-West to South-East
+    return AXIS_NW_SE;
   else if (angle >= 247.5 && angle < 292.5)
-    return AXIS_EW; // East-West
+    return AXIS_NS;
   else
     // angle >= 292.5 && angle < 337.5
-    return AXIS_SW_NE; // South-West to North-East
+    return AXIS_SW_NE;
 }
 
 /*

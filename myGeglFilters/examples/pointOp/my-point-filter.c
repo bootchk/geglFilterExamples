@@ -27,35 +27,52 @@ property_double (high_threshold, "High Threshold", 0.66)
 static void prepare (GeglOperation *operation)
 {
   const Babl *space = gegl_operation_get_source_space (operation, "input");
+  // TODO float 2 format is not defined in babl, so we use Y'A float.
   gegl_operation_set_format (operation, "input",  babl_format_with_space ("Y'A float", space));
   gegl_operation_set_format (operation, "output", babl_format_with_space ("Y'A float", space));
 }
 
 
-/* Transform function is
- *     ___
- *  __/
- *
- * Iterate over each pixel in the input buffer.
- * 
- * Each pixel is represented by two channels: Y' and A.
- * Y' is the luminance channel, A is the alpha channel.
- * 
- * The input buffer is expected to be in the format Y'A float.
- * The output buffer is also in the format Y'A float.
- * * The input and output buffers have two channels per pixel, hence the stride of 2.
- * 
- * The operation processes each pixel independently, hence it is a point filter.
- * Process each pixel in a single pass.
- * 
- * The Y' value is compared against two thresholds:
- * The output pixel is set to black (0) if the Y' value is below the low threshold,
- * set to white (1) if above the high threshold, and otherwise keeps the original Y' value.
- * 
- * The alpha channel is copied unchanged.
- * 
- * This is a simple thresholding operation that can be used for various effects,
- * such as creating a binary mask or isolating certain brightness levels in an image.
+#define FPP 2 // Floats per pixel for the input format
+
+
+/*
+Transform function is
+
+   1   ___
+ _____/
+   0 l h  infinity
+
+Thresholds the first channel of each pixel in the input buffer.
+
+The input and output have two channels.
+
+A typical use case: first channel is luminance and the second is alpha (Y'A).
+Another use case is a gradient field, 
+where channels are magnitude and direction of the gradient.
+
+The second channel is copied unchanged.
+
+The input values are in full range of floats, and can be negative.
+The output values are also floats, but in the range of [0, 1].
+
+When the high threshold is less than or equal to the low threshold,
+the transform function is a simple step function 
+having a step at the low threshold.
+
+The input buffer is expected to be in the format Y'A float.
+The output buffer is also in the format Y'A float.
+The input and output buffers have two channels per pixel, hence the stride of 2.
+
+The operation processes each pixel independently, hence it is a point filter.
+Process each pixel in a single pass.
+
+The first channel value is compared against two thresholds:
+The output pixel is set to black (0.0) if the value is below the low threshold,
+set to white (1.0) if above the high threshold, and otherwise keeps the original value.
+
+This is a simple thresholding operation that can be used for various effects,
+such as creating a binary mask or isolating certain brightness levels in an image.
  */
 static gboolean
 process (GeglOperation       *op,
@@ -85,13 +102,12 @@ process (GeglOperation       *op,
       else  // Otherwise, keep original value
         out[0] = in[0];
           
-      // Copy second channel (if exists) unchanged.
-      // Second channel is often alpha but could be other data.
+      // Copy second channel unchanged.
       out[1] = in[1];
 
       // Move to the next pixel.
-      in  += 2;
-      out += 2;
+      in  += FPP;
+      out += FPP;
     }
 
   return TRUE;

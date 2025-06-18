@@ -10,13 +10,13 @@ property_double (blur_amount, "Blur amount", 1.0)
 
 property_double (low, "Low threshold", 0.3)
   description   ("Low threshold")
-  value_range   (0.0, 0.5)
+  value_range   (0.0, 1.0)
   ui_meta       ("unit", "pixel-distance")
 
 
 property_double (high, "High threshold", 0.8)
   description   ("High threshold")
-  value_range   (0.5, 1.0)
+  value_range   (0.0, 1.0)
   ui_meta       ("unit", "pixel-distance")
 
 #else
@@ -32,7 +32,8 @@ property_double (high, "High threshold", 0.8)
 
 // Base on the above definitions, gegl-op.h generates code for the operation
 #include "gegl-op.h"
-// #include "gegl-image-gradient.h"
+
+// There is no way to include enum definitions private to gegl:image-gradient
 
 
 /* Return a Gegl node that converts an image to grayscale.
@@ -94,9 +95,10 @@ make_blur_node (
 GeglNode *
 make_edge_detect_node (GeglNode *gegl)
 {
-  #define EDGE_SOEBEL 1 // Use the Sobel operator for edge detection.
+  
   #ifdef EDGE_SOEBEL
 
+  /* edge-sobel is not suited: it does not compute direction. */
   return gegl_node_new_child (gegl, "operation", "gegl:edge-sobel", NULL);
 
   #else
