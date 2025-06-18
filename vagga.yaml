@@ -111,15 +111,7 @@ commands:
       # Peculiar to using a container, not to gimp
       export HOME=/work/.home
 
-      # Peculiar to GIMP use of GIR
-      export GI_TYPELIB_PATH=/usr/local/lib/x86_64-linux-gnu/girepository-1.0:/usr/local/lib/girepository-1.0
-
-      export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu:/usr/local/lib
-
-      # suppress dbind errors for accessability
-      export NO_AT_BRIDGE=1
-
-      # so can open DISPLAY: map to a dir mounted in the container
+      # so container can open DISPLAY: map to a dir mounted in the container
       export XDG_RUNTIME_DIR=/run
 
       rm -rf /work/.home/.local/share/gegl-0.4/plug-ins
@@ -138,9 +130,9 @@ commands:
       # cd out of the build environment
       cd /work
 
-      
       export G_MESSAGES_DEBUG=all
 
+      # Explore where meson installed the gegl filter
       echo " "
       echo "ls likely install locations"
       ls -l /work/.home/.local/share/gegl-0.4/plug-ins/
@@ -157,7 +149,8 @@ commands:
       #echo "$XDG_DATA_DIRS"
       echo " "
 
-      #export XDG_DATA_HOME=/usr/local/lib/x86_64-linux-gnu
+      # In some cases, GEGL looks for plugins in the XDG_DATA_HOME directory.
+      # This is the default location for user data files.
       export XDG_DATA_HOME=/work/.home/.local/share
 
 
@@ -174,12 +167,10 @@ commands:
       echo "Tell gegl to describe my installed filter:"
       #gegl --info gegl:text
       #gegl --info bootch:my-graph-filter
-      gegl --info bootch:my-point-filter
+      gegl --info bootch:double-threshold
       echo " "
       gegl --info bootch:canny
       echo " "
-
-      
 
       echo "running gimp"
       # run gimp with the filter installed.

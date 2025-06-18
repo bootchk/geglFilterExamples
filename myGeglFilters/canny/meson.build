@@ -1,4 +1,5 @@
 # Primitive ops used by canny
+subdir('doubleThresholdOp')
 subdir('nonMaxSuppressionOp')
 subdir('hysteresisOp')
 

@@ -4,18 +4,18 @@
 // This is used by the GEGL properties system to generate a user interface
 
 property_double (blur_amount, "Blur amount", 1.0)
-  description   ("Blur amount in pixels")
+  description   ("Blur amount radius in pixels")
   value_range   (0.0, 10.0)
   ui_meta       ("unit", "pixel-distance")
 
-property_double (low, "Low threshold", 0.3)
-  description   ("Low threshold")
+property_double (weak_threshold, "Weak threshold", 0.3)
+  description   ("Threshold to middle gray")
   value_range   (0.0, 1.0)
   ui_meta       ("unit", "pixel-distance")
 
 
-property_double (high, "High threshold", 0.8)
-  description   ("High threshold")
+property_double (strong_threshold, "Strong threshold", 0.8)
+  description   ("Threshold to white")
   value_range   (0.0, 1.0)
   ui_meta       ("unit", "pixel-distance")
 
@@ -138,27 +138,14 @@ make_edge_thinning_node (GeglNode *gegl)
 GeglNode *
 make_threshold_node (GeglNode *gegl)
 {
-  return gegl_node_new_child (gegl, 
-                              "operation", "bootch:my-point-filter",
-                              // magnitude below this value is set to 0 i.e. black.
-                              "low-threshold",  0.33,
-                              // magnitude above this value is set to 1 i.e. white.
-                              "high-threshold", 0.8,
-                              NULL);
+  return gegl_node_new_child (gegl,  "operation", "bootch:double-threshold", NULL);
 }
 
 GeglNode *
 make_hysteresis_node (GeglNode *gegl)
 {
-  return gegl_node_new_child (gegl, 
-                              "operation", "bootch:hysteresis",
-                              // magnitude below this value is set to 0 i.e. black.
-                              // "low-threshold",  0.33,
-                              NULL);
+  return gegl_node_new_child (gegl, "operation", "bootch:hysteresis", NULL);
 }
-
-/* gegl:convert-format */
-
 
 
 
@@ -198,7 +185,7 @@ attach (GeglOperation *operation)
 
     // sobel edge detection. Result edges are thick.
     make_edge_detect_node (gegl),
-    // format is now YA float, i.e. channels magnitude and direction.
+    // format is now float[2], i.e. channels magnitude and direction.
     // Note we have lost any alpha channel, it is not needed for edges.
 
     // Thin edges, aka non maximum suppression.
@@ -206,7 +193,7 @@ attach (GeglOperation *operation)
 
     // TODO discard direction channel,
 
-    // double thresholding
+    // double threshold magnitude channel
     threshold_node,
 
     // hysteresis edge tracking
@@ -225,9 +212,9 @@ attach (GeglOperation *operation)
   gegl_operation_meta_redirect (operation, "blur-amount", blur_node, "std-dev-x");
   gegl_operation_meta_redirect (operation, "blur-amount", blur_node, "std-dev-y");
   
-
-  gegl_operation_meta_redirect (operation, "low", threshold_node, "low-threshold");
-  gegl_operation_meta_redirect (operation, "high", threshold_node, "high-threshold");
+  /* Names weak, strong traditional for Canny. */
+  gegl_operation_meta_redirect (operation, "weak-threshold",   threshold_node, "low-threshold");
+  gegl_operation_meta_redirect (operation, "strong-threshold", threshold_node, "high-threshold");
 }
 
 

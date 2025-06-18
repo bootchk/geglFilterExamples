@@ -2,7 +2,7 @@
 
 property_double (low_threshold, "Low Threshold", 0.33)
     value_range (-200, 200)
-    ui_range    (-1, 2)
+    ui_range    (0, 1)
     description("Values below this become black.")
 
 property_double (high_threshold, "High Threshold", 0.66)
@@ -17,8 +17,8 @@ property_double (high_threshold, "High Threshold", 0.66)
 // Declare is a op of type GEGL_OP_POINT_FILTER
 // This is a point operation, i.e. it processes each pixel independently.
 #define GEGL_OP_POINT_FILTER
-#define GEGL_OP_NAME     my_point_op
-#define GEGL_OP_C_SOURCE my-point-filter.c
+#define GEGL_OP_NAME     double_threshold_op
+#define GEGL_OP_C_SOURCE double-threshold-op.c
 
 // Base on the above definitions, gegl-op.h generates code for the operation
 #include "gegl-op.h"
@@ -130,14 +130,17 @@ gegl_op_class_init (GeglOpClass *klass)
   operation_class->prepare    = prepare;
 
   gegl_operation_class_set_keys (operation_class,
-                                 "title",       "A Point filter",
-                                 "name",        "bootch:my-point-filter",
-                                 "blurb",       "A simple point gegl filter",
+                                 "title",       "Double threshold filter",
+                                 "name",        "bootch:double-threshold",
+                                 "blurb",       "TODO",
                                  "version",     "0.1",
                                  "categories",  "Artistic",
-                                 "description", "my point gegl filter",
-                                 "author",      "Bootch",
+                                 "description", "Clamps low values to black and high values to white, "
+                                                "leaving the middle range unchanged.",
+                                 "author",      "bootchk",
                                  NULL);
 }
 
 #endif
+
+// TODO format double[2]
