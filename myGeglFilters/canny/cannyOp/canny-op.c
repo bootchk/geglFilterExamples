@@ -125,7 +125,7 @@ make_edge_detect_node (GeglNode *gegl)
 GeglNode *
 make_edge_thinning_node (GeglNode *gegl)
 {
-  return gegl_node_new_child (gegl, "operation", "bootch:non-max-suppression", NULL);
+  return gegl_node_new_child (gegl, "operation", "bootchk:non-max-suppression", NULL);
 }
 
 
@@ -138,13 +138,13 @@ Changes higher values to white.
 GeglNode *
 make_threshold_node (GeglNode *gegl)
 {
-  return gegl_node_new_child (gegl,  "operation", "bootch:double-threshold", NULL);
+  return gegl_node_new_child (gegl,  "operation", "bootchk:double-threshold", NULL);
 }
 
 GeglNode *
 make_hysteresis_node (GeglNode *gegl)
 {
-  return gegl_node_new_child (gegl, "operation", "bootch:hysteresis", NULL);
+  return gegl_node_new_child (gegl, "operation", "bootchk:hysteresis", NULL);
 }
 
 /*
@@ -161,7 +161,7 @@ GeglNode *
 make_weak_remove_node (GeglNode *gegl)
 {
   return gegl_node_new_child (gegl,
-                              "operation", "bootch:double-threshold",
+                              "operation", "bootchk:double-threshold",
                               "low-threshold", 0.5, // moot, changed later
                               "high-threshold", 0.5,
                               NULL);
@@ -262,12 +262,12 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
                                  "title",       "Canny edge detect filter",
-                                 "name",        "bootch:canny",
+                                 "name",        "bootchk:canny",
                                  "blurb",       "Generate b/w, thinned edges from an image",
                                  "version",     "0.1",
                                  "categories",  "edge-detect",
                                  "description", "Canny filter",
-                                 "author",      "Bootch",
+                                 "author",      "lloyd konneker",
                                  NULL);
 }
 

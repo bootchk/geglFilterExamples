@@ -105,12 +105,12 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
     "title",       "Non-Maximum Suppression",
-    "name",        "bootch:non-max-suppression",
+    "name",        "bootchk:non-max-suppression",
     "blurb",       "Thin edges in gradient field.",
     "version",     "0.1",
     "categories",  "Artistic",
     "description", "Non-maximum suppression in gradient field.",
-    "author",      "Bootch",
+    "author",      "lloyd konneker",
     NULL);
 }
 

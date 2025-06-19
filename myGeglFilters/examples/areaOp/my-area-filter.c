@@ -296,12 +296,12 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
     "title",       "A Area filter",
-    "name",        "bootch:my-area-filter",
+    "name",        "bootchk:my-area-filter",
     "blurb",       "A simple area gegl filter",
     "version",     "0.1",
     "categories",  "Artistic",
     "description", "my area gegl filter",
-    "author",      "Bootch",
+    "author",      "lloyd konneker",
     NULL);
 }
 

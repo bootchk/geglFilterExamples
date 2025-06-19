@@ -131,12 +131,12 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
                                  "title",       "A Point filter",
-                                 "name",        "bootch:my-point-filter",
+                                 "name",        "bootchk:my-point-filter",
                                  "blurb",       "A simple point gegl filter",
                                  "version",     "0.1",
                                  "categories",  "Artistic",
                                  "description", "my point gegl filter",
-                                 "author",      "Bootch",
+                                 "author",      "lloyd konneker",
                                  NULL);
 }
 

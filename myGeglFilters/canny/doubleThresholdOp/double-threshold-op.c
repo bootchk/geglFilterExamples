@@ -135,13 +135,13 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
                                  "title",       "Double threshold filter",
-                                 "name",        "bootch:double-threshold",
+                                 "name",        "bootchk:double-threshold",
                                  "blurb",       "TODO",
                                  "version",     "0.1",
                                  "categories",  "Artistic",
                                  "description", "Clamps low values to black and high values to white, "
                                                 "leaving the middle range unchanged.",
-                                 "author",      "bootchk",
+                                 "author",      "lloyd konneker",
                                  NULL);
 }
 

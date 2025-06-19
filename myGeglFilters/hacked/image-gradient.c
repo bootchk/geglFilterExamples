@@ -228,7 +228,7 @@ gegl_op_class_init (GeglOpClass *klass)
   operation_class->opencl_support   = FALSE;
 
   gegl_operation_class_set_keys (operation_class,
-    "name",        "bootch:my-image-gradient",
+    "name",        "bootchk:my-image-gradient",
     "title",       _("Image Gradient"),
     "categories",  "edge-detect",
     "reference-hash", "6cd95bf706d744b31b475b3500941f3c",

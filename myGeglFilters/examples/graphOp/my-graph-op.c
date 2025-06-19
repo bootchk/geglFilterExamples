@@ -56,12 +56,12 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
                                  "title",       "A Graph/Meta filter",
-                                 "name",        "bootch:my-graph-filter",
+                                 "name",        "bootchk:my-graph-filter",
                                  "blurb",       "A simple graph gegl filter",
                                  "version",     "0.1",
                                  "categories",  "Artistic",
                                  "description", "my graph gegl filter",
-                                 "author",      "Bootch",
+                                 "author",      "lloyd konneker",
                                  NULL);
 }
 

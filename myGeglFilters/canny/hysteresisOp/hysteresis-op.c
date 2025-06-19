@@ -1,9 +1,34 @@
 /*
 A brushfire operation.
-Historically called hysteresis, but this is a misnomer.
+Historically called hysteresis, but that is a misnomer.
 Brushfire is a more accurate name.
 
-Derived from non-maximum-suppression-op.c
+Promotes white pixels connected to white pixels, to white.
+
+Used in Canny edge detection to promote weak edges to strong edges.
+
+The fire spreads from white pixels (strong) to connected pixels
+that are not black (weak.)
+
+This is a brute-force implementation (many iterations over the image.)
+Other implementations may be more efficient.
+
+The input is two channels.
+Only the first channel is used and changed.
+The first channel is in range [0, 1].
+The first channel typically came from magnitude of a gradient vector.
+Subsequent interpretation is typically as luminance (Y').
+
+When used on its own, on a typical image that is not "edges",
+the filter has the effect of making large white areas,
+everywhere that was not originally pure black,
+or an area surrounded by pure black and having no white pixels.
+
+This is more general than a simple threshold,
+because it considers connectness of pixels.
+
+The operation could be generalized to promote in the opposite direction,
+promoting non-white pixels to black where connected to black pixels.
 */
 
 
@@ -102,13 +127,13 @@ gegl_op_class_init (GeglOpClass *klass)
   operation_class->threaded       = FALSE;
 
   gegl_operation_class_set_keys (operation_class,
-    "title",       "Non-Maximum Suppression",
-    "name",        "bootch:hysteresis",
-    "blurb",       "Thin edges in gradient field.",
+    "title",       "Promote White Connected Pixels",
+    "name",        "bootchk:hysteresis",
+    "blurb",       "Promote weak edges to strong edges.",
     "version",     "0.1",
     "categories",  "Artistic",
-    "description", "Non-maximum suppression in gradient field.",
-    "author",      "Bootch",
+    "description", "Promote pixels connected to white, to white.",
+    "author",      "lloyd konneker",
     NULL);
 }
 

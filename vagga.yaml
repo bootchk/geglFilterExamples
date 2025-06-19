@@ -166,10 +166,10 @@ commands:
 
       echo "Tell gegl to describe my installed filter:"
       #gegl --info gegl:text
-      #gegl --info bootch:my-graph-filter
-      gegl --info bootch:double-threshold
+      #gegl --info bootchk:my-graph-filter
+      gegl --info bootchk:double-threshold
       echo " "
-      gegl --info bootch:canny
+      gegl --info bootchk:canny
       echo " "
 
       echo "running gimp"

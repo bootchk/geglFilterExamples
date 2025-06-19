@@ -213,6 +213,7 @@ hysteresis
     GEGL_ABYSS_NONE);
 
   // The brush fire loop continues until no more pixels are promoted.
+  // The count of iterations is limited by the length of the longest connected path.
   while (brushfire (src_buf, src_rect)) {}
 
   g_debug ("%s after brush fire loop", G_STRFUNC);
