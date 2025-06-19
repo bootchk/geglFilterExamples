@@ -37,11 +37,15 @@ static void prepare (GeglOperation *operation)
 
 
 /*
-Transform function is
+Transform function, where horizontal axis is the first channel value,
+vertical axis is the output value.
 
-   1   ___
- _____/
-   0 l h  infinity
+  1      ___
+        |
+  h    /
+  l   /
+ ____|
+  0  l  h  infinity
 
 Thresholds the first channel of each pixel in the input buffer.
 

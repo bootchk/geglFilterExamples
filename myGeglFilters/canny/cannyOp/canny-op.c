@@ -4,7 +4,7 @@
 // This is used by the GEGL properties system to generate a user interface
 
 property_double (blur_amount, "Blur amount", 1.0)
-  description   ("Blur amount radius in pixels")
+  description   ("Blur amount radius in pixels, to reduce noise before edge detection")
   value_range   (0.0, 10.0)
   ui_meta       ("unit", "pixel-distance")
 
@@ -18,6 +18,9 @@ property_double (strong_threshold, "Strong threshold", 0.8)
   description   ("Threshold to white")
   value_range   (0.0, 1.0)
   ui_meta       ("unit", "pixel-distance")
+
+// property_boolean (should_remove_weak, "Hide weak values", TRUE)
+//  description   ("Show middle gray values, or set to black")
 
 #else
 
@@ -67,30 +70,31 @@ make_blur_node (
 /* Return a Gegl node that detects edges, in some broad sense.
  * This hides the choice of one of many possible edge-detectors.
  * The choice of edge detection algorithm is made here.
+ * This is an inner edge detection node; canny wraps it
+ * with other operations to produce a final result.
  * 
  * The usual choice for Canny edge detection is the Sobel operator.
  * 
- * There are many edge detection algorithms available in GEGL.
- * gegl:edge-canny does not already exist in GEGL 0.4.
+ * There are many edge detection algorithms available in GEGL 0.4 :case
  * "gegl:edge-sobel" "gegl:edge-laplace" "gegl:edge-neon"
  * 
  * "gegl:edge-sobel" is non-standard (see its implementation in GEGL source code).
+ * 
  * "gegl:image-gradient" is the usual Sobel operator.
  * 
- * The usual Sobel operator computes the gradient of the image intensity at each pixel,
- * highlighting regions of high spatial frequency that correspond to edges.
- * The output is a grayscale image where edges are highlighted.
- * The Sobel operator is often used as a preprocessing step for more complex edge detection algorithms.
- * It is particularly effective for detecting edges in images with well-defined structures,
- * such as lines and shapes, and is less sensitive to noise compared to other edge detection methods.
- * The Sobel operator is a discrete differentiation operator,
- * that computes an approximation of the gradient of the image intensity function.
- * The Sobel operator works by convolving the image with two 3x3 kernels,
- * one for detecting horizontal edges and one for vertical edges.
- * Then combines the two results to get the gradient magnitude AND direction.
- * 
+ * The usual Sobel operator computes the gradient of image intensity.
  * The gradient in math is a vector field (an array of vectors)
  * The Sobel operator computes a vector (magnitude and direction) at each pixel.
+ * The vector points in the direction of the greatest rate of increase of intensity,
+ * and its magnitude (length) is the rate of change in that direction.
+ * So the result is 2 channels.
+ * 
+ * The output can be rendered as a grayscale image where edges are highlighted.
+ * The rendering is usually of only the magnitude channel, ignoring the direction channel.
+ * But other rendering is possible, such as using the direction channel to colorize edges. 
+ * 
+ * The canny filter uses the direction channel to thin edges.
+ * The Sobel operator alone produces thick edges. 
  */
 GeglNode *
 make_edge_detect_node (GeglNode *gegl)
@@ -125,16 +129,12 @@ make_edge_thinning_node (GeglNode *gegl)
 }
 
 
-/* Threshold with this transfer function:
-      __
-     |
-    /
-  _|
-
- * I.E. middle gray values are kept, 
- * lower values dropped to black, 
- * higher values raised to white.
- */
+/*
+See double-threshold-op.c for the definition of this operation.
+Keeps middle gray values.
+Changes lower values to black 
+Changes higher values to white.
+*/
 GeglNode *
 make_threshold_node (GeglNode *gegl)
 {
@@ -146,6 +146,27 @@ make_hysteresis_node (GeglNode *gegl)
 {
   return gegl_node_new_child (gegl, "operation", "bootch:hysteresis", NULL);
 }
+
+/*
+Make a node to remove (to black) the weak values.
+This hides a choice of implementation.
+Here we use double-threshold, since we already used it.
+Alternatively, we could use a simple threshold.
+
+Later we set the low and high thresholds to the same value, strong-threshold,
+which effectively removes the weak values.
+This is a trick to make the double threshold into a single threshold.
+*/
+GeglNode *
+make_weak_remove_node (GeglNode *gegl)
+{
+  return gegl_node_new_child (gegl,
+                              "operation", "bootch:double-threshold",
+                              "low-threshold", 0.5, // moot, changed later
+                              "high-threshold", 0.5,
+                              NULL);
+}
+
 
 
 
@@ -159,10 +180,12 @@ attach (GeglOperation *operation)
 {
   GeglNode *gegl = operation->node;
 
+  // gboolean should_remove_weak = GEGL_PROPERTIES (operation)->should_remove_weak;
+
   // Nodes with params redirected to self's params.
   GeglNode *threshold_node = make_threshold_node (gegl);
   GeglNode *blur_node      = make_blur_node (gegl, 3.0);
-
+  GeglNode *final_threshold_node = make_weak_remove_node (gegl);
 
   /* Call variadic function to link operations,
    * i.e. create a graph that is a sequence i.e. chain.
@@ -199,7 +222,10 @@ attach (GeglOperation *operation)
     // hysteresis edge tracking
     make_hysteresis_node (gegl),
 
-    // We could convert to indexed color, black and white,
+    final_threshold_node,
+
+    // Image is grayscale
+    // We don't convert to indexed color, black and white
 
     gegl_node_get_output_proxy (gegl, "output"),
     NULL);
@@ -215,6 +241,14 @@ attach (GeglOperation *operation)
   /* Names weak, strong traditional for Canny. */
   gegl_operation_meta_redirect (operation, "weak-threshold",   threshold_node, "low-threshold");
   gegl_operation_meta_redirect (operation, "strong-threshold", threshold_node, "high-threshold");
+
+  /* Redirect the strong-threshold to both params of the final threshold node.
+   * This is a trick to make the double-threshold into a single threshold.
+   * This removes the weak values.
+   */
+  gegl_operation_meta_redirect (operation, "strong-threshold", final_threshold_node, "low-threshold");
+  gegl_operation_meta_redirect (operation, "strong-threshold", final_threshold_node, "high-threshold");
+
 }
 
 
