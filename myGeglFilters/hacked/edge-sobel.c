@@ -19,26 +19,26 @@
  * Copyright 2011 Victor Oliveira <victormatheus@gmail.com>
  */
 
-#include "config.h"
-#include <glib/gi18n-lib.h>
+//#include "config.h"
+//#include <glib/gi18n-lib.h>
 
 #ifdef GEGL_PROPERTIES
 
-property_boolean (horizontal,  _("Horizontal"), TRUE)
+property_boolean (horizontal,  "Horizontal", TRUE)
 
-property_boolean (vertical,  _("Vertical"), TRUE)
+property_boolean (vertical,  "Vertical", TRUE)
 
-property_boolean (keep_sign,  _("Keep Sign"), TRUE)
-     description (_("Keep negative values in result; when off, the absolute value of the result is used instead."))
+property_boolean (keep_sign,  "Keep Sign", TRUE)
+     description ("Keep negative values in result; when off, the absolute value of the result is used instead.")
 
 #else
 
 #define GEGL_OP_AREA_FILTER
-#define GEGL_OP_NAME     edge_sobel
+#define GEGL_OP_NAME     hacked_edge_sobel
 #define GEGL_OP_C_SOURCE edge-sobel.c
 
 #include "gegl-op.h"
-#include <stdio.h>
+#include <stdio.h> // TODO
 
 #define SOBEL_RADIUS 1
 
@@ -68,10 +68,11 @@ static void prepare (GeglOperation *operation)
   gegl_operation_set_format (operation, "output", format);
 }
 
-#include "opencl/gegl-cl.h"
-#include "gegl-buffer-cl-iterator.h"
+#ifdef LKK_USE_OPENCL
 
+#include "opencl/gegl-cl.h"
 #include "opencl/edge-sobel.cl.h"
+#include "gegl-buffer-cl-iterator.h"
 
 static GeglClRunData *cl_data = NULL;
 
@@ -173,6 +174,10 @@ cl_process (GeglOperation       *operation,
   return TRUE;
 }
 
+#endif // USE_OPENCL
+
+
+
 static gboolean
 process (GeglOperation       *operation,
          GeglBuffer          *input,
@@ -194,12 +199,19 @@ process (GeglOperation       *operation,
          Incorrect results generated when either horizontal or vertical are enabled
          and keep_sign is disabled.
 */
-  if (gegl_operation_use_opencl (operation))
-    if ((!(horizontal && vertical) && keep_sign) && cl_process (operation, input, output, result, has_alpha))
-      return TRUE;
+  //if (gegl_operation_use_opencl (operation))
+  //  if ((!(horizontal && vertical) && keep_sign) && cl_process (operation, input, output, result, has_alpha))
+  //    return TRUE;
+
+  g_debug ("Source Rectangle for edge_sobel: %d %d %d %d",
+           compute.x, compute.y, compute.width, compute.height);
+  g_debug ("Destination Rectangle for edge_sobel: %d %d %d %d",
+           result->x, result->y, result->width, result->height);  
 
   edge_sobel (input, &compute, output, result,
-              o->horizontal, o->vertical, o->keep_sign, has_alpha,
+  // edge_sobel (input, result, output, result,
+              // o->horizontal, o->vertical, o->keep_sign, has_alpha,
+              horizontal, vertical, keep_sign, has_alpha,
               babl_format_with_space ("RGBA float",
               gegl_operation_get_format (operation, "output")));
   return TRUE;
@@ -387,18 +399,18 @@ gegl_op_class_init (GeglOpClass *klass)
   filter_class     = GEGL_OPERATION_FILTER_CLASS (klass);
 
   operation_class->prepare        = prepare;
-  operation_class->opencl_support = TRUE;  // Partially enabled, read FIXME
+  operation_class->opencl_support = FALSE;  // Partially enabled, read FIXME
   operation_class->threaded       = FALSE; // XXX: the need for this is a bug
 
   filter_class->process           = process;
 
   gegl_operation_class_set_keys (operation_class,
-    "name",        "gegl:edge-sobel",
-    "title",       _("Sobel Edge Detection"),
+    "name",        "bootchk:my-edge-sobel",
+    "title",       "Sobel Edge Detection",
     "categories",  "edge-detect",
     "reference-hash", "d75a32d401a11b715bd28277a5962882",
     "reference-hashB", "00766c72f7392bc736cef2d4e7ce1aa6",
-    "description", _("Specialized direction-dependent edge detection"),
+    "description", "Specialized direction-dependent edge detection",
           NULL);
 }
 
