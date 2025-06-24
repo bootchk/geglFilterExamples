@@ -125,7 +125,7 @@ make_edge_detect_node (GeglNode *gegl)
 GeglNode *
 make_edge_thinning_node (GeglNode *gegl)
 {
-  return gegl_node_new_child (gegl, "operation", "bootchk:non-max-suppression", NULL);
+  return gegl_node_new_child (gegl, "operation", "bootchk:non-max-gradient-suppress", NULL);
 }
 
 
