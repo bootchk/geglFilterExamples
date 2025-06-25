@@ -12,7 +12,6 @@ userInstallPath = '/work/.home/.local/share/gegl-0.4/plug-ins/'
 # We want to install to $XDG_DATA_HOME, where gegl looks.
 
 subdir('examples')
-
 subdir('canny')
-
 subdir('hacked')
+subdir('visualization')

@@ -140,23 +140,23 @@ commands:
       echo " "
 
 
-      echo "echoing likely XDG environment variables"
-      echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
-      echo "XDG_CONFIG_DIRS: $XDG_CONFIG_DIRS"
+      #echo "echoing likely XDG environment variables"
+      #echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+      #echo "XDG_CONFIG_DIRS: $XDG_CONFIG_DIRS"
       #echo "$XDG_CACHE_HOME"
       #echo "$XDG_CONFIG_HOME"
-      echo "XDG_DATA_HOME: $XDG_DATA_HOME"
+      #echo "XDG_DATA_HOME: $XDG_DATA_HOME"
       #echo "$XDG_DATA_DIRS"
-      echo " "
+      #echo " "
 
       # In some cases, GEGL looks for plugins in the XDG_DATA_HOME directory.
       # This is the default location for user data files.
       export XDG_DATA_HOME=/work/.home/.local/share
 
 
-      echo "The environment in which gimp is run:"
-      env
-      echo " "
+      #echo "The environment in which gimp is run:"
+      #env
+      #echo " "
 
       echo "Tell gegl to list my operations:"
       # which gegl should yield /usr/bin/gegl
@@ -167,8 +167,8 @@ commands:
       echo "Tell gegl to describe my installed filter:"
       #gegl --info gegl:text
       #gegl --info bootchk:my-graph-filter
-      gegl --info bootchk:double-threshold
-      echo " "
+      #gegl --info bootchk:double-threshold
+      #echo " "
       gegl --info bootchk:canny
       echo " "
 
